@@ -1,0 +1,4 @@
+HAI 1.2
+BTW This is a comment
+VISIBLE "HAI WORLD!"
+KTHXBYE
