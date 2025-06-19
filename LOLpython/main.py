@@ -1,4 +1,8 @@
 import sys
+from .parser import Parser
+from .interpreter import Interpreter
+from .errors import LOLPythonError
+from .lexer import Lexer
 
 def main():
     if len(sys.argv) != 2:
@@ -13,9 +17,24 @@ def main():
         print(f"Error: File not found at '{filepath}'")
         sys.exit(1)
 
-    print("LOLPython interpreter is running...")
-    print(f"Code to interpret:\n---\n{code}\n---")
-    # Логіка інтерпретації буде додана пізніше
+    try:
+        lexer = Lexer(code)
+        tokens = lexer.tokenize()
+
+        parser = Parser(tokens)
+        ast = parser.parse()
+
+        interpreter = Interpreter()
+        interpreter.interpret(ast)
+
+        print("Interpretation finished successfully.")
+
+    except LOLPythonError as e:
+        print(f"An error occurred: {e}", file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print(f"An unexpected internal error occurred: {e}", file=sys.stderr)
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
