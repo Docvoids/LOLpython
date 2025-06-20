@@ -43,29 +43,41 @@ class Parser:
         token_type = self._current().type
         if token_type == 'I_HAS_A': return self._parse_var_decl()
         if token_type == 'VISIBLE': return self._parse_visible()
+        if token_type == 'HOW_IZ_I': return self._parse_func_def()
+        if token_type == 'FOUND_YR': return self._parse_return()
         
-        # Присвоєння тепер є частиною виразів
         expr = self._parse_expression()
         self._consume_whitespace()
         if self._current().type == 'R':
             self._eat('R')
             value = self._parse_expression()
-            # Ціль присвоєння може бути тільки ідентифікатором на цьому етапі
             if not isinstance(expr, ast.IdentifierNode):
                 raise ParserError("Invalid assignment target.")
             return ast.AssignmentNode(target=expr, expression=value)
         
-        raise ParserError(f"Invalid statement starting with {expr} at line {self._current().line}.")
+        if isinstance(expr, ast.FuncCallNode):
+            return expr
+
+        raise ParserError(f"Invalid statement structure starting with {expr} at line {self._current().line}.")
 
     def _parse_expression(self):
         token_type = self._current().type
         if token_type in ('SUM_OF', 'DIFF_OF', 'PRODUKT_OF', 'QUOSHUNT_OF', 'BOTH_SAEM', 'DIFFRINT'):
             op_token = self._advance()
-            left = self._parse_primary()
+            left = self._parse_postfix_expression()
             self._eat('AN')
-            right = self._parse_primary()
+            right = self._parse_postfix_expression()
             return ast.BinaryOpNode(left=left, op=op_token.type, right=right)
-        return self._parse_primary()
+        return self._parse_postfix_expression()
+
+    def _parse_postfix_expression(self):
+        expr = self._parse_primary()
+        while True:
+            if self._current().type == 'YR':
+                expr = self._finish_call(expr)
+            else:
+                break
+        return expr
 
     def _parse_primary(self):
         token = self._current()
@@ -87,8 +99,47 @@ class Parser:
     def _parse_visible(self):
         self._eat('VISIBLE')
         expressions = [self._parse_expression()]
-        # Поки що не підтримуємо кілька виразів через AN
+        terminators = ('NEWLINE', 'EOF', 'KTHXBYE', 'COMMENT', 'IF_U_SAY_SO')
+        while self._current().type not in terminators:
+            expressions.append(self._parse_expression())
         return ast.VisibleNode(expressions=expressions)
+
+    def _parse_func_def(self):
+        self._eat('HOW_IZ_I')
+        name = self._eat('IDENTIFIER').value
+        params = []
+        if self._current().type == 'YR':
+            self._eat('YR')
+            params.append(ast.IdentifierNode(name=self._eat('IDENTIFIER').value))
+            while self._current().type == 'AN':
+                self._eat('AN')
+                self._eat('YR')
+                params.append(ast.IdentifierNode(name=self._eat('IDENTIFIER').value))
+        self._consume_whitespace()
+        body = self._parse_statement_list(('IF_U_SAY_SO',))
+        self._eat('IF_U_SAY_SO')
+        return ast.FuncDefNode(name=name, params=params, body=body)
+
+    def _parse_return(self):
+        self._eat('FOUND_YR')
+        value = None
+        terminators = ('NEWLINE', 'COMMENT', 'IF_U_SAY_SO')
+        if self._current().type not in terminators:
+            value = self._parse_expression()
+        return ast.ReturnNode(value=value)
+
+    def _finish_call(self, callee):
+        args = []
+        if self._current().type == 'YR':
+            self._eat('YR')
+            # Перевірка, чи є аргументи після YR
+            if self._current().type not in ('NEWLINE', 'COMMENT', 'R', 'IF_U_SAY_SO', 'KTHXBYE'):
+                args.append(self._parse_expression())
+                while self._current().type == 'AN':
+                    self._eat('AN')
+                    self._eat('YR')
+                    args.append(self._parse_expression())
+        return ast.FuncCallNode(callee=callee, args=args)
 
     def _parse_literal(self):
         token = self._advance()
