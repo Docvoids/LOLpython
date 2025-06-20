@@ -26,3 +26,7 @@ class ProgramNode(ASTNode):
 class VarDeclNode(StatementNode):
     name: str
     initializer: Optional[ExpressionNode]
+
+@dataclass
+class VisibleNode(StatementNode):
+    expressions: List[ExpressionNode]
