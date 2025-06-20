@@ -1,8 +1,19 @@
 from dataclasses import dataclass
-from typing import List
+from typing import Any, List
 
 @dataclass
 class ASTNode: pass
+
+@dataclass
+class ExpressionNode(ASTNode): pass
+
+@dataclass
+class LiteralNode(ExpressionNode):
+    value: Any
+
+@dataclass
+class IdentifierNode(ExpressionNode):
+    name: str
 
 @dataclass
 class StatementNode(ASTNode): pass
