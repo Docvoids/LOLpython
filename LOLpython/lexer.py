@@ -35,12 +35,16 @@ class Lexer:
             ('NEWLINE', r'\n+'),
             ('COMMENT', r'BTW.*'),
 
+            ('HOW_IZ_I', r'HOW IZ I'),
+            ('IF_U_SAY_SO', r'IF U SAY SO'),
+            ('FOUND_YR', r'FOUND YR'),
+            ('YR', r'YR'),
+
             ('HAI', r'HAI 1\.2'),
             ('KTHXBYE', r'KTHXBYE'),
             ('I_HAS_A', r'I HAS A'),
             ('ITZ', r'ITZ'),
             ('R', r'R'),
-            # Нові токени для бінарних операцій
             ('SUM_OF', r'SUM OF'),
             ('DIFF_OF', r'DIFF OF'),
             ('PRODUKT_OF', r'PRODUKT OF'),
