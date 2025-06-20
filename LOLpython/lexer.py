@@ -37,6 +37,8 @@ class Lexer:
 
             ('HAI', r'HAI 1\.2'),
             ('KTHXBYE', r'KTHXBYE'),
+            ('I_HAS_A', r'I HAS A'),
+            ('ITZ', r'ITZ'),
             
             ('YARN', r'"[^"]*"'),
             ('NUMBR', r'-?\d+\.\d+|-?\d+'),
