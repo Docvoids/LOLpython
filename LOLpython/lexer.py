@@ -39,6 +39,15 @@ class Lexer:
             ('KTHXBYE', r'KTHXBYE'),
             ('I_HAS_A', r'I HAS A'),
             ('ITZ', r'ITZ'),
+            ('R', r'R'),
+            # Нові токени для бінарних операцій
+            ('SUM_OF', r'SUM OF'),
+            ('DIFF_OF', r'DIFF OF'),
+            ('PRODUKT_OF', r'PRODUKT OF'),
+            ('QUOSHUNT_OF', r'QUOSHUNT OF'),
+            ('BOTH_SAEM', r'BOTH SAEM'),
+            ('DIFFRINT', r'DIFFRINT'),
+            ('AN', r'AN'),
             ('VISIBLE', r'VISIBLE'),
             
             ('YARN', r'"[^"]*"'),
@@ -51,7 +60,7 @@ class Lexer:
             token = self._get_token(token_specs)
             if token is None:
                 raise LexerError(f"Unexpected character '{self.code[self.pos]}' at line {self.line}, column {self.column}")
-            if token.type != 'SKIP' and token.type != 'NEWLINE' and token.type != 'COMMENT':
+            if token.type != 'SKIP':
                 tokens.append(token)
         tokens.append(Token('EOF', 'EOF', self.line, self.column))
         return tokens
