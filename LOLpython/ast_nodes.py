@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, List
+from typing import Any, List, Optional
 
 @dataclass
 class ASTNode: pass
@@ -21,3 +21,8 @@ class StatementNode(ASTNode): pass
 @dataclass
 class ProgramNode(ASTNode):
     statements: List[StatementNode]
+
+@dataclass
+class VarDeclNode(StatementNode):
+    name: str
+    initializer: Optional[ExpressionNode]
