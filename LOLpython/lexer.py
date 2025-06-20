@@ -39,6 +39,7 @@ class Lexer:
             ('KTHXBYE', r'KTHXBYE'),
             ('I_HAS_A', r'I HAS A'),
             ('ITZ', r'ITZ'),
+            ('VISIBLE', r'VISIBLE'),
             
             ('YARN', r'"[^"]*"'),
             ('NUMBR', r'-?\d+\.\d+|-?\d+'),
