@@ -41,19 +41,39 @@ class Parser:
 
     def _parse_statement(self):
         token_type = self._current().type
-        if token_type == 'I_HAS_A':
-            return self._parse_var_decl()
-        if token_type == 'VISIBLE':
-            return self._parse_visible()
-        raise ParserError(f"Unexpected statement token: {self._current()}")
+        if token_type == 'I_HAS_A': return self._parse_var_decl()
+        if token_type == 'VISIBLE': return self._parse_visible()
+        
+        # Присвоєння тепер є частиною виразів
+        expr = self._parse_expression()
+        self._consume_whitespace()
+        if self._current().type == 'R':
+            self._eat('R')
+            value = self._parse_expression()
+            # Ціль присвоєння може бути тільки ідентифікатором на цьому етапі
+            if not isinstance(expr, ast.IdentifierNode):
+                raise ParserError("Invalid assignment target.")
+            return ast.AssignmentNode(target=expr, expression=value)
+        
+        raise ParserError(f"Invalid statement starting with {expr} at line {self._current().line}.")
 
     def _parse_expression(self):
+        token_type = self._current().type
+        if token_type in ('SUM_OF', 'DIFF_OF', 'PRODUKT_OF', 'QUOSHUNT_OF', 'BOTH_SAEM', 'DIFFRINT'):
+            op_token = self._advance()
+            left = self._parse_primary()
+            self._eat('AN')
+            right = self._parse_primary()
+            return ast.BinaryOpNode(left=left, op=op_token.type, right=right)
+        return self._parse_primary()
+
+    def _parse_primary(self):
         token = self._current()
         if token.type in ('NUMBR', 'YARN', 'TROOF'):
             return self._parse_literal()
         if token.type == 'IDENTIFIER':
             return ast.IdentifierNode(name=self._advance().value)
-        raise ParserError(f"Unexpected token when parsing an expression: {token}")
+        raise ParserError(f"Unexpected token when parsing a primary expression: {token}")
 
     def _parse_var_decl(self):
         self._eat('I_HAS_A')
@@ -67,7 +87,7 @@ class Parser:
     def _parse_visible(self):
         self._eat('VISIBLE')
         expressions = [self._parse_expression()]
-        # Поки що підтримуємо тільки один вираз
+        # Поки що не підтримуємо кілька виразів через AN
         return ast.VisibleNode(expressions=expressions)
 
     def _parse_literal(self):
