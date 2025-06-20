@@ -10,10 +10,11 @@ class LiteralNode(ExpressionNode): value: Any
 @dataclass
 class IdentifierNode(ExpressionNode): name: str
 @dataclass
-class BinaryOpNode(ExpressionNode): # <-- Новий вузол
-    left: ExpressionNode
-    op: str
-    right: ExpressionNode
+class BinaryOpNode(ExpressionNode): left: ExpressionNode; op: str; right: ExpressionNode
+@dataclass
+class FuncCallNode(ExpressionNode):
+    callee: ExpressionNode
+    args: List[ExpressionNode]
 @dataclass
 class StatementNode(ASTNode): pass
 @dataclass
@@ -24,3 +25,8 @@ class VarDeclNode(StatementNode): name: str; initializer: Optional[ExpressionNod
 class AssignmentNode(StatementNode): target: ExpressionNode; expression: ExpressionNode
 @dataclass
 class VisibleNode(StatementNode): expressions: List[ExpressionNode]
+@dataclass
+class FuncDefNode(StatementNode): name: str; params: List[IdentifierNode]; body: List[StatementNode]
+@dataclass
+class ReturnNode(StatementNode):
+    value: Optional[ExpressionNode]
