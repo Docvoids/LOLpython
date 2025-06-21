@@ -39,6 +39,7 @@ class Lexer:
             ('YA_RLY', r'YA RLY'),
             ('NO_WAI', r'NO WAI'),
             ('OIC', r'OIC'),
+            ('BUKKIT', r'BUKKIT'),
 
             ('HOW_IZ_I', r'HOW IZ I'),
             ('IF_U_SAY_SO', r'IF U SAY SO'),
