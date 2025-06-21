@@ -44,6 +44,8 @@ class Lexer:
             ('IF_U_SAY_SO', r'IF U SAY SO'),
             ('FOUND_YR', r'FOUND YR'),
             ('HOW_DUZ_I', r'HOW DUZ I'),
+            ('A_NEW', r'A NEW'),
+            ('ME', r'ME'),
             ('YR', r'YR'),
 
             ('HAI', r'HAI 1\.2'),
@@ -64,6 +66,8 @@ class Lexer:
             ('YARN', r'"[^"]*"'),
             ('NUMBR', r'-?\d+\.\d+|-?\d+'),
             ('TROOF', r'WIN|FAIL'),
+
+            ('POSSESSIVE_Z', r"'Z"),
             ('IDENTIFIER', r'[a-zA-Z][a-zA-Z0-9_]*'),
         ]
 
