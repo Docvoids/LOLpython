@@ -111,6 +111,16 @@ class Interpreter:
     def _visit_FuncDefNode(self, node: ast.FuncDefNode):
         self.current_scope.set(node.name, LOLCallable(node))
 
+    def _visit_IfNode(self, node: ast.IfNode):
+        condition_val = self._evaluate_and_call(node.condition)
+        is_true = condition_val not in (False, None)
+        if is_true:
+            for stmt in node.if_block:
+                self.interpret(stmt)
+        elif node.else_block is not None:
+            for stmt in node.else_block:
+                self.interpret(stmt)
+
     def _execute_function(self, func_def: ast.FuncDefNode, args: list):
         if len(args) != len(func_def.params):
             raise InterpreterError(f"Function '{func_def.name}' expected {len(func_def.params)} arguments, but got {len(args)}.")
@@ -149,3 +159,4 @@ class Interpreter:
         if value is None and not self.current_scope.has(var_name):
             raise InterpreterError(f"Undeclared variable '{var_name}'")
         return value
+        

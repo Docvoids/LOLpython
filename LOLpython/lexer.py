@@ -35,6 +35,11 @@ class Lexer:
             ('NEWLINE', r'\n+'),
             ('COMMENT', r'BTW.*'),
 
+            ('O_RLY', r'O RLY\?'),
+            ('YA_RLY', r'YA RLY'),
+            ('NO_WAI', r'NO WAI'),
+            ('OIC', r'OIC'),
+
             ('HOW_IZ_I', r'HOW IZ I'),
             ('IF_U_SAY_SO', r'IF U SAY SO'),
             ('FOUND_YR', r'FOUND YR'),

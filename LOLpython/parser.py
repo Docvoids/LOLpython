@@ -55,6 +55,9 @@ class Parser:
                 raise ParserError("Invalid assignment target.")
             return ast.AssignmentNode(target=expr, expression=value)
         
+        if self._current().type == 'O_RLY':
+            return self._parse_if_statement(expr)
+
         if isinstance(expr, ast.FuncCallNode):
             return expr
 
@@ -87,6 +90,20 @@ class Parser:
             return ast.IdentifierNode(name=self._advance().value)
         raise ParserError(f"Unexpected token when parsing a primary expression: {token}")
 
+    def _parse_if_statement(self, condition):
+        self._eat('O_RLY')
+        self._consume_whitespace()
+        self._eat('YA_RLY')
+        self._consume_whitespace()
+        if_block = self._parse_statement_list(('NO_WAI', 'OIC'))
+        else_block = None
+        if self._current().type == 'NO_WAI':
+            self._eat('NO_WAI')
+            self._consume_whitespace()
+            else_block = self._parse_statement_list(('OIC',))
+        self._eat('OIC')
+        return ast.IfNode(condition=condition, if_block=if_block, else_block=else_block)
+
     def _parse_var_decl(self):
         self._eat('I_HAS_A')
         name = self._eat('IDENTIFIER').value
@@ -99,7 +116,7 @@ class Parser:
     def _parse_visible(self):
         self._eat('VISIBLE')
         expressions = [self._parse_expression()]
-        terminators = ('NEWLINE', 'EOF', 'KTHXBYE', 'COMMENT', 'IF_U_SAY_SO')
+        terminators = ('NEWLINE', 'EOF', 'KTHXBYE', 'COMMENT', 'IF_U_SAY_SO', 'OIC', 'NO_WAI')
         while self._current().type not in terminators:
             expressions.append(self._parse_expression())
         return ast.VisibleNode(expressions=expressions)
@@ -123,7 +140,7 @@ class Parser:
     def _parse_return(self):
         self._eat('FOUND_YR')
         value = None
-        terminators = ('NEWLINE', 'COMMENT', 'IF_U_SAY_SO')
+        terminators = ('NEWLINE', 'COMMENT', 'IF_U_SAY_SO', 'OIC', 'NO_WAI')
         if self._current().type not in terminators:
             value = self._parse_expression()
         return ast.ReturnNode(value=value)
@@ -132,8 +149,7 @@ class Parser:
         args = []
         if self._current().type == 'YR':
             self._eat('YR')
-            # Перевірка, чи є аргументи після YR
-            if self._current().type not in ('NEWLINE', 'COMMENT', 'R', 'IF_U_SAY_SO', 'KTHXBYE'):
+            if self._current().type not in ('NEWLINE', 'COMMENT', 'R', 'IF_U_SAY_SO', 'KTHXBYE', 'OIC', 'NO_WAI'):
                 args.append(self._parse_expression())
                 while self._current().type == 'AN':
                     self._eat('AN')
