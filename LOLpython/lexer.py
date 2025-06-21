@@ -43,10 +43,12 @@ class Lexer:
             ('HOW_IZ_I', r'HOW IZ I'),
             ('IF_U_SAY_SO', r'IF U SAY SO'),
             ('FOUND_YR', r'FOUND YR'),
+            ('HOW_DUZ_I', r'HOW DUZ I'),
             ('YR', r'YR'),
 
             ('HAI', r'HAI 1\.2'),
             ('KTHXBYE', r'KTHXBYE'),
+            ('KTHX', r'KTHX'),
             ('I_HAS_A', r'I HAS A'),
             ('ITZ', r'ITZ'),
             ('R', r'R'),
@@ -73,3 +75,4 @@ class Lexer:
                 tokens.append(token)
         tokens.append(Token('EOF', 'EOF', self.line, self.column))
         return tokens
+        
