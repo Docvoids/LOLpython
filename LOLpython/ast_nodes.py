@@ -12,9 +12,13 @@ class IdentifierNode(ExpressionNode): name: str
 @dataclass
 class BinaryOpNode(ExpressionNode): left: ExpressionNode; op: str; right: ExpressionNode
 @dataclass
-class FuncCallNode(ExpressionNode):
-    callee: ExpressionNode
-    args: List[ExpressionNode]
+class FuncCallNode(ExpressionNode): callee: ExpressionNode; args: List[ExpressionNode]
+@dataclass
+class NewInstanceNode(ExpressionNode): class_name: IdentifierNode
+@dataclass
+class MemberAccessNode(ExpressionNode): object: ExpressionNode; member: IdentifierNode
+@dataclass
+class MeNode(ExpressionNode): pass
 @dataclass
 class StatementNode(ASTNode): pass
 @dataclass
@@ -28,11 +32,15 @@ class VisibleNode(StatementNode): expressions: List[ExpressionNode]
 @dataclass
 class FuncDefNode(StatementNode): name: str; params: List[IdentifierNode]; body: List[StatementNode]
 @dataclass
-class ReturnNode(StatementNode):
-    value: Optional[ExpressionNode]
+class ReturnNode(StatementNode): value: Optional[ExpressionNode]
 @dataclass
 class IfNode(StatementNode):
     condition: ExpressionNode
     if_block: List[StatementNode]
     else_block: Optional[List[StatementNode]]
+@dataclass
+class ClassDefNode(StatementNode):
+    name: str
+    methods: List[FuncDefNode]
+    properties: List[VarDeclNode]
     

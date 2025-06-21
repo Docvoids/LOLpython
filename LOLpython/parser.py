@@ -44,6 +44,7 @@ class Parser:
         if token_type == 'I_HAS_A': return self._parse_var_decl()
         if token_type == 'VISIBLE': return self._parse_visible()
         if token_type == 'HOW_IZ_I': return self._parse_func_def()
+        if token_type == 'HOW_DUZ_I': return self._parse_class_def()
         if token_type == 'FOUND_YR': return self._parse_return()
         
         expr = self._parse_expression()
@@ -51,14 +52,14 @@ class Parser:
         if self._current().type == 'R':
             self._eat('R')
             value = self._parse_expression()
-            if not isinstance(expr, ast.IdentifierNode):
+            if not isinstance(expr, (ast.IdentifierNode, ast.MemberAccessNode)):
                 raise ParserError("Invalid assignment target.")
             return ast.AssignmentNode(target=expr, expression=value)
         
         if self._current().type == 'O_RLY':
             return self._parse_if_statement(expr)
 
-        if isinstance(expr, ast.FuncCallNode):
+        if isinstance(expr, (ast.FuncCallNode, ast.MemberAccessNode)):
             return expr
 
         raise ParserError(f"Invalid statement structure starting with {expr} at line {self._current().line}.")
@@ -78,6 +79,10 @@ class Parser:
         while True:
             if self._current().type == 'YR':
                 expr = self._finish_call(expr)
+            elif self._current().type == 'POSSESSIVE_Z':
+                self._eat('POSSESSIVE_Z')
+                member = ast.IdentifierNode(name=self._eat('IDENTIFIER').value)
+                expr = ast.MemberAccessNode(object=expr, member=member)
             else:
                 break
         return expr
@@ -88,6 +93,11 @@ class Parser:
             return self._parse_literal()
         if token.type == 'IDENTIFIER':
             return ast.IdentifierNode(name=self._advance().value)
+        if token.type == 'A_NEW':
+            return self._parse_new_instance()
+        if token.type == 'ME':
+            self._advance()
+            return ast.MeNode()
         raise ParserError(f"Unexpected token when parsing a primary expression: {token}")
 
     def _parse_if_statement(self, condition):
@@ -116,7 +126,7 @@ class Parser:
     def _parse_visible(self):
         self._eat('VISIBLE')
         expressions = [self._parse_expression()]
-        terminators = ('NEWLINE', 'EOF', 'KTHXBYE', 'COMMENT', 'IF_U_SAY_SO', 'OIC', 'NO_WAI')
+        terminators = ('NEWLINE', 'EOF', 'KTHXBYE', 'COMMENT', 'IF_U_SAY_SO', 'OIC', 'NO_WAI', 'KTHX')
         while self._current().type not in terminators:
             expressions.append(self._parse_expression())
         return ast.VisibleNode(expressions=expressions)
@@ -137,10 +147,27 @@ class Parser:
         self._eat('IF_U_SAY_SO')
         return ast.FuncDefNode(name=name, params=params, body=body)
 
+    def _parse_class_def(self):
+        self._eat('HOW_DUZ_I')
+        name = self._eat('IDENTIFIER').value
+        self._consume_whitespace()
+        properties, methods = [], []
+        while self._current().type not in ('KTHX', 'EOF'):
+            token_type = self._current().type
+            if token_type == 'I_HAS_A':
+                properties.append(self._parse_var_decl())
+            elif token_type == 'HOW_IZ_I':
+                methods.append(self._parse_func_def())
+            else:
+                raise ParserError(f"Unexpected token in class body: {self._current()}")
+            self._consume_whitespace()
+        self._eat('KTHX')
+        return ast.ClassDefNode(name=name, properties=properties, methods=methods)
+
     def _parse_return(self):
         self._eat('FOUND_YR')
         value = None
-        terminators = ('NEWLINE', 'COMMENT', 'IF_U_SAY_SO', 'OIC', 'NO_WAI')
+        terminators = ('NEWLINE', 'COMMENT', 'IF_U_SAY_SO', 'OIC', 'NO_WAI', 'KTHX')
         if self._current().type not in terminators:
             value = self._parse_expression()
         return ast.ReturnNode(value=value)
@@ -149,13 +176,18 @@ class Parser:
         args = []
         if self._current().type == 'YR':
             self._eat('YR')
-            if self._current().type not in ('NEWLINE', 'COMMENT', 'R', 'IF_U_SAY_SO', 'KTHXBYE', 'OIC', 'NO_WAI'):
+            if self._current().type not in ('NEWLINE', 'COMMENT', 'R', 'IF_U_SAY_SO', 'KTHXBYE', 'OIC', 'NO_WAI', 'KTHX'):
                 args.append(self._parse_expression())
                 while self._current().type == 'AN':
                     self._eat('AN')
                     self._eat('YR')
                     args.append(self._parse_expression())
         return ast.FuncCallNode(callee=callee, args=args)
+
+    def _parse_new_instance(self):
+        self._eat('A_NEW')
+        class_name = ast.IdentifierNode(name=self._eat('IDENTIFIER').value)
+        return ast.NewInstanceNode(class_name=class_name)
 
     def _parse_literal(self):
         token = self._advance()
@@ -167,3 +199,4 @@ class Parser:
         if token.type == 'TROOF':
             return ast.LiteralNode(value=True if token.value == 'WIN' else False)
         raise ParserError(f"Invalid literal token: {token}")
+        
