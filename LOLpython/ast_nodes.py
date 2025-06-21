@@ -30,3 +30,9 @@ class FuncDefNode(StatementNode): name: str; params: List[IdentifierNode]; body:
 @dataclass
 class ReturnNode(StatementNode):
     value: Optional[ExpressionNode]
+@dataclass
+class IfNode(StatementNode):
+    condition: ExpressionNode
+    if_block: List[StatementNode]
+    else_block: Optional[List[StatementNode]]
+    
