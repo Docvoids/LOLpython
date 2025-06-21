@@ -35,4 +35,8 @@ class IfNode(StatementNode):
     condition: ExpressionNode
     if_block: List[StatementNode]
     else_block: Optional[List[StatementNode]]
-    
+@dataclass
+class ClassDefNode(StatementNode):
+    name: str
+    methods: List[FuncDefNode]
+    properties: List[VarDeclNode]    
