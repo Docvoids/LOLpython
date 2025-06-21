@@ -4,9 +4,17 @@ from .errors import InterpreterError
 class ReturnSignal(Exception):
     def __init__(self, value): self.value = value
 
+class LOLInstance:
+    def __init__(self, class_def: ast.ClassDefNode):
+        self.class_def = class_def
+        self.fields = {}
+    def __str__(self):
+        return f"[instance of {self.class_def.name}]"
+
 class LOLCallable:
-    def __init__(self, func_def: ast.FuncDefNode):
+    def __init__(self, func_def: ast.FuncDefNode, instance=None):
         self.func_def = func_def
+        self.instance = instance
     def __str__(self):
         return f"[callable {self.func_def.name}]"
 
@@ -26,6 +34,7 @@ class Interpreter:
     def __init__(self):
         self.global_scope = Scope()
         self.current_scope = self.global_scope
+        self.current_instance = None
 
     def interpret(self, node: ast.ASTNode):
         method_name = f'_visit_{type(node).__name__}'
@@ -36,7 +45,7 @@ class Interpreter:
         value = self.interpret(node)
         if isinstance(value, LOLCallable):
             if not value.func_def.params:
-                return self._execute_function(value.func_def, [])
+                return self._execute_function(value.func_def, [], instance=value.instance)
         return value
 
     def _generic_visit(self, node):
@@ -61,6 +70,11 @@ class Interpreter:
                     return
                 scope = scope.parent
             raise InterpreterError(f"Undeclared variable '{var_name}'")
+        elif isinstance(target, ast.MemberAccessNode):
+            obj = self.interpret(target.object)
+            if not isinstance(obj, LOLInstance):
+                raise InterpreterError("Can only assign to properties of an instance.")
+            obj.fields[target.member.name] = value
         else:
             raise InterpreterError("Invalid assignment target.")
 
@@ -78,6 +92,7 @@ class Interpreter:
             val = self._evaluate_and_call(expr)
             if val is None: outputs.append("NOOB")
             elif isinstance(val, bool): outputs.append("WIN" if val else "FAIL")
+            elif isinstance(val, LOLInstance): outputs.append(str(val))
             else: outputs.append(str(val))
         print(" ".join(outputs))
 
@@ -105,11 +120,14 @@ class Interpreter:
         callee = self.interpret(node.callee)
         if not isinstance(callee, LOLCallable):
             name = getattr(node.callee, 'name', '[unknown]')
-            raise InterpreterError(f"'{name}' is not a function.")
-        return self._execute_function(callee.func_def, node.args)
+            raise InterpreterError(f"'{name}' is not a function or method.")
+        return self._execute_function(callee.func_def, node.args, instance=callee.instance)
 
     def _visit_FuncDefNode(self, node: ast.FuncDefNode):
-        self.current_scope.set(node.name, LOLCallable(node))
+        self.current_scope.set(node.name, node)
+
+    def _visit_ClassDefNode(self, node: ast.ClassDefNode):
+        self.current_scope.set(node.name, node)
 
     def _visit_IfNode(self, node: ast.IfNode):
         condition_val = self._evaluate_and_call(node.condition)
@@ -121,16 +139,17 @@ class Interpreter:
             for stmt in node.else_block:
                 self.interpret(stmt)
 
-    def _execute_function(self, func_def: ast.FuncDefNode, args: list):
+    def _execute_function(self, func_def: ast.FuncDefNode, args: list, instance=None):
         if len(args) != len(func_def.params):
             raise InterpreterError(f"Function '{func_def.name}' expected {len(func_def.params)} arguments, but got {len(args)}.")
         
-        previous_scope = self.current_scope
-        call_scope = Scope(parent=self.global_scope)
-        self.current_scope = call_scope
+        previous_scope, previous_instance = self.current_scope, self.current_instance
+        parent_scope = self.global_scope if instance is None else previous_scope
+        call_scope = Scope(parent=parent_scope)
+        self.current_scope, self.current_instance = call_scope, instance
 
         for param, arg_expr in zip(func_def.params, args):
-            arg_value = self._interpret_in_scope(arg_expr, previous_scope)
+            arg_value = self._interpret_in_scope(arg_expr, previous_scope, previous_instance)
             self.current_scope.set(param.name, arg_value)
         
         return_value = None
@@ -140,14 +159,14 @@ class Interpreter:
         except ReturnSignal as ret:
             return_value = ret.value
         
-        self.current_scope = previous_scope
+        self.current_scope, self.current_instance = previous_scope, previous_instance
         return return_value
 
-    def _interpret_in_scope(self, node, scope):
-        original_scope = self.current_scope
-        self.current_scope = scope
+    def _interpret_in_scope(self, node, scope, instance):
+        original_scope, original_instance = self.current_scope, self.current_instance
+        self.current_scope, self.current_instance = scope, instance
         result = self._evaluate_and_call(node)
-        self.current_scope = original_scope
+        self.current_scope, self.current_instance = original_scope, original_instance
         return result
 
     def _visit_LiteralNode(self, node: ast.LiteralNode):
@@ -156,7 +175,36 @@ class Interpreter:
     def _visit_IdentifierNode(self, node: ast.IdentifierNode):
         var_name = node.name
         value = self.current_scope.get(var_name)
+        if isinstance(value, ast.FuncDefNode):
+            return LOLCallable(value)
         if value is None and not self.current_scope.has(var_name):
             raise InterpreterError(f"Undeclared variable '{var_name}'")
         return value
-        
+
+    def _visit_NewInstanceNode(self, node: ast.NewInstanceNode):
+        class_name = node.class_name.name
+        class_def = self.current_scope.get(class_name)
+        if not isinstance(class_def, ast.ClassDefNode):
+            raise InterpreterError(f"'{class_name}' is not a class.")
+        instance = LOLInstance(class_def)
+        for prop in class_def.properties:
+            value = self.interpret(prop.initializer) if prop.initializer else None
+            instance.fields[prop.name] = value
+        return instance
+
+    def _visit_MemberAccessNode(self, node: ast.MemberAccessNode):
+        obj = self.interpret(node.object)
+        if not isinstance(obj, LOLInstance):
+            raise InterpreterError("Can only access properties or methods on an instance.")
+        member_name = node.member.name
+        for method in obj.class_def.methods:
+            if method.name == member_name:
+                return LOLCallable(method, instance=obj)
+        if member_name in obj.fields:
+            return obj.fields[member_name]
+        raise InterpreterError(f"Instance of '{obj.class_def.name}' has no property or method named '{member_name}'.")
+
+    def _visit_MeNode(self, node: ast.MeNode):
+        if self.current_instance is None:
+            raise InterpreterError("'ME' can only be used inside a method.")
+        return self.current_instance
