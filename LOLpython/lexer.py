@@ -4,6 +4,7 @@ from .errors import LexerError
 
 Token = namedtuple('Token', ['type', 'value', 'line', 'column'])
 
+
 class Lexer:
     def __init__(self, code: str):
         self.code = code
@@ -40,6 +41,7 @@ class Lexer:
             ('NO_WAI', r'NO WAI'),
             ('OIC', r'OIC'),
             ('BUKKIT', r'BUKKIT'),
+            ('MAEK', r'MAEK'),
 
             ('HOW_IZ_I', r'HOW IZ I'),
             ('IF_U_SAY_SO', r'IF U SAY SO'),
@@ -63,7 +65,7 @@ class Lexer:
             ('DIFFRINT', r'DIFFRINT'),
             ('AN', r'AN'),
             ('VISIBLE', r'VISIBLE'),
-            
+
             ('YARN', r'"[^"]*"'),
             ('NUMBR', r'-?\d+\.\d+|-?\d+'),
             ('TROOF', r'WIN|FAIL'),
@@ -75,9 +77,9 @@ class Lexer:
         while self.pos < len(self.code):
             token = self._get_token(token_specs)
             if token is None:
-                raise LexerError(f"Unexpected character '{self.code[self.pos]}' at line {self.line}, column {self.column}")
+                raise LexerError(
+                    f"Unexpected character '{self.code[self.pos]}' at line {self.line}, column {self.column}")
             if token.type != 'SKIP':
                 tokens.append(token)
         tokens.append(Token('EOF', 'EOF', self.line, self.column))
         return tokens
-        
