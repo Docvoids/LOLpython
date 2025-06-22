@@ -93,10 +93,9 @@ class Interpreter:
             index = self._evaluate_and_call(target.index)
             if not isinstance(index, int):
                 raise InterpreterError("BUKKIT index must be a NUMBR.")
-            if 0 <= index < len(bukkit_obj):
-                bukkit_obj[index] = value
-            else:
-                raise InterpreterError(f"Index {index} out of bounds for BUKKIT of size {len(bukkit_obj)}")
+            while len(bukkit_obj) <= index:
+                bukkit_obj.append(None)
+            bukkit_obj[index] = value
         else:
             raise InterpreterError("Invalid assignment target.")
 
