@@ -86,6 +86,17 @@ class Interpreter:
             if not isinstance(obj, LOLInstance):
                 raise InterpreterError("Can only assign to properties of an instance.")
             obj.fields[target.member.name] = value
+        elif isinstance(target, ast.BukkitAccessNode):
+            bukkit_obj = self._evaluate_and_call(target.bukkit)
+            if not isinstance(bukkit_obj, list):
+                raise InterpreterError("Can only perform indexed assignment on a BUKKIT.")
+            index = self._evaluate_and_call(target.index)
+            if not isinstance(index, int):
+                raise InterpreterError("BUKKIT index must be a NUMBR.")
+            if 0 <= index < len(bukkit_obj):
+                bukkit_obj[index] = value
+            else:
+                raise InterpreterError(f"Index {index} out of bounds for BUKKIT of size {len(bukkit_obj)}")
         else:
             raise InterpreterError("Invalid assignment target.")
 
