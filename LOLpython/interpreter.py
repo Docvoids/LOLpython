@@ -93,6 +93,7 @@ class Interpreter:
             if val is None: outputs.append("NOOB")
             elif isinstance(val, bool): outputs.append("WIN" if val else "FAIL")
             elif isinstance(val, LOLInstance): outputs.append(str(val))
+            elif isinstance(val, list): outputs.append(f"[BUKKIT of {len(val)} items]")
             else: outputs.append(str(val))
         print(" ".join(outputs))
 
@@ -138,6 +139,9 @@ class Interpreter:
         elif node.else_block is not None:
             for stmt in node.else_block:
                 self.interpret(stmt)
+
+    def _visit_BukkitNode(self, node: ast.BukkitNode):
+        return []
 
     def _execute_function(self, func_def: ast.FuncDefNode, args: list, instance=None):
         if len(args) != len(func_def.params):
@@ -208,3 +212,4 @@ class Interpreter:
         if self.current_instance is None:
             raise InterpreterError("'ME' can only be used inside a method.")
         return self.current_instance
+        

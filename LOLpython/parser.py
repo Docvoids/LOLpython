@@ -92,12 +92,19 @@ class Parser:
         if token.type in ('NUMBR', 'YARN', 'TROOF'):
             return self._parse_literal()
         if token.type == 'IDENTIFIER':
+            if token.value == 'A' and self.tokens[self.pos + 1].type == 'BUKKIT':
+                self._advance()
+                self._advance()
+                return ast.BukkitNode()
             return ast.IdentifierNode(name=self._advance().value)
         if token.type == 'A_NEW':
             return self._parse_new_instance()
         if token.type == 'ME':
             self._advance()
             return ast.MeNode()
+        if token.type == 'BUKKIT':
+            self._advance()
+            return ast.BukkitNode()
         raise ParserError(f"Unexpected token when parsing a primary expression: {token}")
 
     def _parse_if_statement(self, condition):
@@ -199,4 +206,3 @@ class Parser:
         if token.type == 'TROOF':
             return ast.LiteralNode(value=True if token.value == 'WIN' else False)
         raise ParserError(f"Invalid literal token: {token}")
-        
