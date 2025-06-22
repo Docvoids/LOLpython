@@ -22,6 +22,10 @@ class MeNode(ExpressionNode): pass
 @dataclass
 class BukkitNode(ExpressionNode): pass
 @dataclass
+class BukkitAccessNode(ExpressionNode):
+    bukkit: ExpressionNode
+    index: ExpressionNode
+@dataclass
 class MaekNode(ExpressionNode):
     target: ExpressionNode
     target_type: str
