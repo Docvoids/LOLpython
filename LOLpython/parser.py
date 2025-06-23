@@ -1,6 +1,7 @@
 from . import ast_nodes as ast
 from .errors import ParserError
 
+
 class Parser:
     def __init__(self, tokens: list):
         self.tokens = tokens
@@ -46,20 +47,20 @@ class Parser:
         if token_type == 'HOW_IZ_I': return self._parse_func_def()
         if token_type == 'HOW_DUZ_I': return self._parse_class_def()
         if token_type == 'FOUND_YR': return self._parse_return()
-        
+
         expr = self._parse_expression()
         self._consume_whitespace()
         if self._current().type == 'R':
             self._eat('R')
             value = self._parse_expression()
-            if not isinstance(expr, (ast.IdentifierNode, ast.MemberAccessNode)):
+            if not isinstance(expr, (ast.IdentifierNode, ast.MemberAccessNode, ast.BukkitAccessNode)):
                 raise ParserError("Invalid assignment target.")
             return ast.AssignmentNode(target=expr, expression=value)
-        
+
         if self._current().type == 'O_RLY':
             return self._parse_if_statement(expr)
 
-        if isinstance(expr, (ast.FuncCallNode, ast.MemberAccessNode)):
+        if isinstance(expr, (ast.FuncCallNode, ast.MemberAccessNode, ast.BukkitAccessNode)):
             return expr
 
         raise ParserError(f"Invalid statement structure starting with {expr} at line {self._current().line}.")
@@ -81,8 +82,13 @@ class Parser:
                 expr = self._finish_call(expr)
             elif self._current().type == 'POSSESSIVE_Z':
                 self._eat('POSSESSIVE_Z')
-                member = ast.IdentifierNode(name=self._eat('IDENTIFIER').value)
-                expr = ast.MemberAccessNode(object=expr, member=member)
+                if self._current().type == 'ITZ':
+                    self._eat('ITZ')
+                    index = self._parse_postfix_expression()
+                    expr = ast.BukkitAccessNode(bukkit=expr, index=index)
+                else:
+                    member = ast.IdentifierNode(name=self._eat('IDENTIFIER').value)
+                    expr = ast.MemberAccessNode(object=expr, member=member)
             else:
                 break
         return expr
@@ -105,6 +111,8 @@ class Parser:
         if token.type == 'BUKKIT':
             self._advance()
             return ast.BukkitNode()
+        if token.type == 'MAEK':
+            return self._parse_maek()
         raise ParserError(f"Unexpected token when parsing a primary expression: {token}")
 
     def _parse_if_statement(self, condition):
@@ -179,11 +187,20 @@ class Parser:
             value = self._parse_expression()
         return ast.ReturnNode(value=value)
 
+    def _parse_maek(self):
+        self._eat('MAEK')
+        target = self._parse_expression()
+        if self._current().type == 'IDENTIFIER' and self._current().value == 'A':
+            self._advance()
+        type_token = self._eat('IDENTIFIER')
+        return ast.MaekNode(target=target, target_type=type_token.value)
+
     def _finish_call(self, callee):
         args = []
         if self._current().type == 'YR':
             self._eat('YR')
-            if self._current().type not in ('NEWLINE', 'COMMENT', 'R', 'IF_U_SAY_SO', 'KTHXBYE', 'OIC', 'NO_WAI', 'KTHX'):
+            if self._current().type not in (
+            'NEWLINE', 'COMMENT', 'R', 'IF_U_SAY_SO', 'KTHXBYE', 'OIC', 'NO_WAI', 'KTHX'):
                 args.append(self._parse_expression())
                 while self._current().type == 'AN':
                     self._eat('AN')

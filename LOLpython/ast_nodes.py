@@ -22,6 +22,14 @@ class MeNode(ExpressionNode): pass
 @dataclass
 class BukkitNode(ExpressionNode): pass
 @dataclass
+class BukkitAccessNode(ExpressionNode):
+    bukkit: ExpressionNode
+    index: ExpressionNode
+@dataclass
+class MaekNode(ExpressionNode):
+    target: ExpressionNode
+    target_type: str
+@dataclass
 class StatementNode(ASTNode): pass
 @dataclass
 class ProgramNode(ASTNode): statements: List[StatementNode]
@@ -44,4 +52,4 @@ class IfNode(StatementNode):
 class ClassDefNode(StatementNode):
     name: str
     methods: List[FuncDefNode]
-    properties: List[VarDeclNode]   
+    properties: List[VarDeclNode]
